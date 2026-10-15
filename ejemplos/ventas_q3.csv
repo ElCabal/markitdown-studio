@@ -1,0 +1,6 @@
+ID,Region,Producto,Ventas_USD,Crecimiento_Pct,Responsable
+1,Norte,Licencias Claude Pro,125400,24.5%,Ana Gomez
+2,Sur,Consultoria RAG,98200,18.2%,Carlos Mendoza
+3,Centro,Soporte LLM On-Premise,145800,31.0%,Laura Restrepo
+4,Este,Capacitacion Prompt Engineering,45600,12.4%,Diego Torres
+5,Oeste,Integracion API Gemini,189000,45.8%,Elena Morales

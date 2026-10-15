@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MarkItDown Studio - Conversor Local a Markdown para LLMs</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/vendor/marked.min.js"></script>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Barra de Navegación / Header -->
+        <header class="navbar">
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                </div>
+                <div>
+                    <h1>MarkItDown Studio</h1>
+                    <p class="brand-tagline">Optimiza tus documentos para Claude, ChatGPT y Gemini ahorrando hasta un 99% de tokens</p>
+                </div>
+            </div>
+            <div class="header-badges">
+                <span class="badge badge-online">
+                    <span class="pulse-dot"></span> 100% Local & Privado
+                </span>
+                <span class="badge badge-muted">Basado en Microsoft MarkItDown</span>
+            </div>
+        </header>
+
+        <!-- Contenedor Principal -->
+        <main class="main-content">
+            <!-- Sección Superior: Configuración de Origen y Destino -->
+            <section class="card config-card">
+                <div class="tabs-header">
+                    <button class="tab-btn active" id="tabFolderBtn" onclick="switchTab('folder')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                        Escanear Carpeta o Archivos
+                    </button>
+                    <button class="tab-btn" id="tabUploadBtn" onclick="switchTab('upload')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        Arrastrar y Soltar (Drag & Drop)
+                    </button>
+                    <button class="tab-btn" id="tabUrlBtn" onclick="switchTab('url')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                        YouTube o URL Web
+                    </button>
+                </div>
+
+                <!-- Panel Modo Carpeta Local -->
+                <div class="tab-panel active" id="panelFolder">
+                    <div class="input-grid">
+                        <div class="input-group">
+                            <label for="inputFolderPath">Carpeta de Origen con Documentos</label>
+                            <div class="input-with-button">
+                                <input type="text" id="inputFolderPath" placeholder="C:\Ruta\A\Tus\Archivos..." />
+                                <button class="btn btn-secondary" onclick="browseInputFolder()" title="Abrir explorador de Windows">
+                                    📁 Examinar Carpeta
+                                </button>
+                                <button class="btn btn-secondary" onclick="browseInputFiles()" title="Elegir archivos individuales">
+                                    📄 Examinar Archivos
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="options-row">
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="chkRecursive" checked>
+                                <span class="checkmark"></span>
+                                Incluir subcarpetas (modo recursivo)
+                            </label>
+                            <div class="filter-pills" id="filterPills">
+                                <span class="pill-label">Filtrar:</span>
+                                <button class="pill active" data-ext="all" onclick="toggleExtensionPill(this, 'all')">Todos</button>
+                                <button class="pill" data-ext=".pdf" onclick="toggleExtensionPill(this, '.pdf')">PDF</button>
+                                <button class="pill" data-ext=".docx" onclick="toggleExtensionPill(this, '.docx')">Word (.docx)</button>
+                                <button class="pill" data-ext=".xlsx" onclick="toggleExtensionPill(this, '.xlsx')">Excel (.xlsx)</button>
+                                <button class="pill" data-ext=".pptx" onclick="toggleExtensionPill(this, '.pptx')">PowerPoint</button>
+                                <button class="pill" data-ext=".zip" onclick="toggleExtensionPill(this, '.zip')">ZIP</button>
+                                <button class="pill" data-ext=".html" onclick="toggleExtensionPill(this, '.html')">HTML</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel Modo Drag & Drop -->
+                <div class="tab-panel" id="panelUpload">
+                    <div class="dropzone" id="dropzone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+                        <div class="dropzone-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                        </div>
+                        <h3>Arrastra tus archivos o carpetas aquí</h3>
+                        <p class="dropzone-hint">Soporta PDF, Word (.docx), Excel (.xlsx, .csv), PowerPoint (.pptx), ZIP, HTML, JSON, TXT y más</p>
+                        <div class="dropzone-buttons">
+                            <label class="btn btn-secondary">
+                                📂 Seleccionar Archivos
+                                <input type="file" id="browserFileInput" multiple style="display:none" onchange="handleBrowserFiles(event)">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel Modo YouTube / URL -->
+                <div class="tab-panel" id="panelUrl">
+                    <div class="input-grid">
+                        <div class="input-group">
+                            <label for="inputUrl">Enlace de YouTube o Página Web</label>
+                            <div class="input-with-button">
+                                <input type="text" id="inputUrl" placeholder="https://www.youtube.com/watch?v=... o https://ejemplo.com/articulo" />
+                                <button class="btn btn-primary" onclick="convertUrlDirect()">
+                                    ⚡ Extraer y Convertir a Markdown
+                                </button>
+                            </div>
+                        </div>
+                        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: -6px;">
+                            💡 MarkItDown descargará los subtítulos y metadatos del video o el contenido estructurado de la web, convirtiéndolo instantáneamente a Markdown para LLMs.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Configuración de Carpeta de Destino (Común a ambos modos) -->
+                <div class="output-destination-box">
+                    <div class="input-group">
+                        <label for="outputFolderPath">
+                            <span>Carpeta de Destino para guardar los Markdown (.md)</span>
+                            <span class="label-optional">(Opcional: Si lo dejas vacío, podrás descargarlos o copiarlos directamente)</span>
+                        </label>
+                        <div class="input-with-button">
+                            <input type="text" id="outputFolderPath" placeholder="C:\Ruta\Donde\Guardar\Resultados..." />
+                            <button class="btn btn-secondary" onclick="browseOutputFolder()">
+                                📂 Examinar Carpeta Destino
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Barra de Acciones y Estadísticas Globales -->
+            <section class="actions-bar">
+                <div class="stats-summary" id="statsSummary">
+                    <div class="stat-item">
+                        <span class="stat-number" id="countSelected">0</span>
+                        <span class="stat-label">Archivos listos</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="totalSizeOriginal">0 KB</span>
+                        <span class="stat-label">Tamaño acumulado</span>
+                    </div>
+                    <div class="stat-item highlight-savings" id="statSavingsBox" style="display:none;">
+                        <span class="stat-number" id="totalSavingsPct">0%</span>
+                        <span class="stat-label">Ahorro total de peso</span>
+                    </div>
+                    <div class="stat-item" id="statTokensBox" style="display:none;">
+                        <span class="stat-number" id="totalEstimatedTokens">0</span>
+                        <span class="stat-label">Tokens estimados (.md)</span>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-ghost" id="btnClear" onclick="clearFileList()" disabled>
+                        Limpiar Lista
+                    </button>
+                    <button class="btn btn-secondary" id="btnZip" onclick="downloadAllZip()" style="display: none;">
+                        📦 Descargar Todos en ZIP
+                    </button>
+                    <button class="btn btn-primary" id="btnConvert" onclick="startConversion()" disabled>
+                        ⚡ Convertir a Markdown
+                    </button>
+                </div>
+            </section>
+
+            <!-- Barra de Progreso -->
+            <div class="progress-container" id="progressContainer" style="display: none;">
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="progressBarFill" style="width: 0%;"></div>
+                </div>
+                <div class="progress-text" id="progressText">Iniciando conversión...</div>
+            </div>
+
+            <!-- Tabla de Archivos y Resultados -->
+            <section class="card table-card">
+                <div class="table-header-title">
+                    <h2>Cola de Archivos</h2>
+                    <span class="files-counter" id="tableCounter">0 archivos</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="data-table" id="filesTable">
+                        <thead>
+                            <tr>
+                                <th>Archivo</th>
+                                <th>Tipo</th>
+                                <th>Tamaño Orig.</th>
+                                <th>Estado</th>
+                                <th>Tamaño .MD</th>
+                                <th>Ahorro (%)</th>
+                                <th>Tokens Est.</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="filesTableBody">
+                            <tr class="empty-row" id="emptyRow">
+                                <td colspan="8">
+                                    <div class="empty-state">
+                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                        </svg>
+                                        <p>No hay archivos seleccionados aún. Elige una carpeta o arrastra documentos.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal de Vista Previa en Vivo -->
+    <div class="modal-overlay" id="previewModal" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-area">
+                    <h3 id="modalFileName">Documento.md</h3>
+                    <div class="modal-meta-chips" id="modalMetaChips">
+                        <!-- Chips dinámicos de tamaño y tokens -->
+                    </div>
+                </div>
+                <div class="modal-controls">
+                    <div class="view-toggle">
+                        <button class="toggle-btn active" id="btnViewRendered" onclick="setPreviewMode('rendered')">
+                            👁️ Renderizado
+                        </button>
+                        <button class="toggle-btn" id="btnViewRaw" onclick="setPreviewMode('raw')">
+                            📝 Markdown Plano
+                        </button>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="copyModalMarkdown()">
+                        📋 Copiar al Portapapeles
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="downloadModalMarkdown()">
+                        💾 Descargar .md
+                    </button>
+                    <button class="btn-close" onclick="closePreviewModal()" title="Cerrar">✕</button>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <div class="preview-content markdown-body" id="renderedPreview"></div>
+                <textarea class="raw-markdown-editor" id="rawMarkdownPreview" readonly style="display: none;"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
