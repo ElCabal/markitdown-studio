@@ -1,5 +1,14 @@
 streamlit>=1.30.0
-markitdown[all]>=0.1.8
+markitdown>=0.1.8
+pdfminer-six
+pdfplumber
+mammoth
+python-pptx
+openpyxl
+pandas
+xlrd
+olefile
+youtube-transcript-api
 fastapi>=0.100.0
 uvicorn>=0.20.0
 python-multipart>=0.0.9
