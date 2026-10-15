@@ -3,7 +3,7 @@ import time
 import zipfile
 from pathlib import Path
 import streamlit as st
-from markitdown import MarkItDown
+from converter_engine import convert_document, convert_url
 
 st.set_page_config(
     page_title="MarkItDown Studio",
@@ -23,11 +23,6 @@ st.markdown("""
 st.markdown('<div class="main-title">⚡ MarkItDown Studio</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-title">Convierte documentos complejos y videos a Markdown optimizado para Claude, ChatGPT y Gemini.</div>', unsafe_allow_html=True)
 
-@st.cache_resource
-def get_converter():
-    return MarkItDown()
-
-md = get_converter()
 
 def estimate_tokens(text: str) -> int:
     return max(1, int(len(text) / 3.8)) if text else 0
@@ -62,9 +57,7 @@ with tab_upload:
                 ext = Path(uploaded_file.name).suffix.lower()
 
                 try:
-                    stream = io.BytesIO(bytes_data)
-                    res = md.convert_stream(stream, file_extension=ext)
-                    content = res.text_content or res.markdown or ""
+                    content, meta = convert_document(bytes_data, uploaded_file.name, ext=ext)
                     md_bytes = len(content.encode("utf-8"))
                     tokens = estimate_tokens(content)
                     savings = max(0.0, round((1.0 - (md_bytes / orig_size)) * 100, 1)) if orig_size > 0 else 0
@@ -76,7 +69,8 @@ with tab_upload:
                         "orig_size": orig_size,
                         "md_size": md_bytes,
                         "savings": savings,
-                        "tokens": tokens
+                        "tokens": tokens,
+                        "engine": meta.get("engine", "markitdown")
                     })
                 except Exception as e:
                     results.append({
@@ -97,11 +91,10 @@ with tab_url:
         if url_input.strip():
             with st.spinner("Descargando transcripción y convirtiendo..."):
                 try:
-                    res = md.convert(url_input.strip())
-                    content = res.text_content or res.markdown or ""
+                    content, title, meta = convert_url(url_input.strip())
                     md_bytes = len(content.encode("utf-8"))
                     tokens = estimate_tokens(content)
-                    name = getattr(res, "title", "transcripcion_youtube") + ".md"
+                    name = f"{title}.md"
 
                     st.session_state["results"] = [{
                         "name": name,
@@ -110,7 +103,8 @@ with tab_url:
                         "orig_size": md_bytes * 5,
                         "md_size": md_bytes,
                         "savings": 90.0,
-                        "tokens": tokens
+                        "tokens": tokens,
+                        "engine": meta.get("engine", "markitdown")
                     }]
                     st.success("¡Contenido convertido exitosamente!")
                 except Exception as e:

@@ -12,12 +12,9 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse, JSONResponse
 from pydantic import BaseModel
-from markitdown import MarkItDown
+from converter_engine import convert_document, convert_url as engine_convert_url
 
 app = FastAPI(title="MarkItDown Studio", version="1.0.0")
-
-# Instancia global de MarkItDown
-converter = MarkItDown()
 
 # Extensiones reconocidas por MarkItDown
 SUPPORTED_EXTENSIONS = {
@@ -164,9 +161,8 @@ async def convert_local(req: ConvertLocalFilesRequest):
         t0 = time.time()
 
         try:
-            # Conversión mediante MarkItDown
-            res = converter.convert(str(file_path))
-            markdown_content = res.text_content or res.markdown or ""
+            content_bytes = file_path.read_bytes()
+            markdown_content, meta = convert_document(content_bytes, file_path.name, ext=file_path.suffix.lower())
             elapsed = time.time() - t0
 
             md_bytes = len(markdown_content.encode("utf-8"))
@@ -241,12 +237,8 @@ async def convert_upload(
         t0 = time.time()
 
         try:
-            # MarkItDown soporta streams mediante convert_stream
-            file_stream = io.BytesIO(content)
-            # Deducir extensión para el stream
             ext = Path(file_name).suffix.lower()
-            res = converter.convert_stream(file_stream, file_extension=ext)
-            markdown_content = res.text_content or res.markdown or ""
+            markdown_content, meta = convert_document(content, file_name, ext=ext)
             elapsed = time.time() - t0
 
             md_bytes = len(markdown_content.encode("utf-8"))
@@ -304,15 +296,10 @@ async def convert_url(req: ConvertUrlRequest):
 
     t0 = time.time()
     try:
-        res = converter.convert(url)
-        markdown_content = res.text_content or res.markdown or ""
+        markdown_content, item_title, meta = engine_convert_url(url)
         elapsed = time.time() - t0
-
         md_bytes = len(markdown_content.encode("utf-8"))
         tokens = estimate_tokens(markdown_content)
-
-        # Generar nombre amigable basado en título o URL
-        item_title = getattr(res, "title", None) or "transcripcion_youtube"
         # Limpiar caracteres inválidos para nombre de archivo en Windows
         safe_name = "".join(c for c in item_title if c.isalnum() or c in (" ", "_", "-")).strip()[:50]
         if not safe_name:

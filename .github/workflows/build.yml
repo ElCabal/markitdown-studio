@@ -45,6 +45,9 @@ jobs:
             --hidden-import "uvicorn" \
             --hidden-import "fastapi" \
             --hidden-import "markitdown" \
+            --hidden-import "converter_engine" \
+            --hidden-import "pymupdf" \
+            --hidden-import "pymupdf4llm" \
             app.py
 
       - name: Compilar aplicacion en macOS
@@ -57,6 +60,9 @@ jobs:
             --hidden-import "uvicorn" \
             --hidden-import "fastapi" \
             --hidden-import "markitdown" \
+            --hidden-import "converter_engine" \
+            --hidden-import "pymupdf" \
+            --hidden-import "pymupdf4llm" \
             app.py
 
       - name: Subir artefacto compilado listo para compartir

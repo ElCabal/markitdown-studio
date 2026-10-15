@@ -45,4 +45,6 @@ desktop.ini
 *.log
 uv.lock
 conversiones_markdown.zip
+conversiones_markdown/
+markdown-files*/
 temp_uploads/
