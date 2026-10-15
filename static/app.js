@@ -22,12 +22,14 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- Pestañas ---
 function switchTab(mode) {
     appState.mode = mode;
-    document.getElementById('tabFolderBtn').classList.toggle('active', mode === 'folder');
-    document.getElementById('tabUploadBtn').classList.toggle('active', mode === 'upload');
-    document.getElementById('tabUrlBtn').classList.toggle('active', mode === 'url');
-    document.getElementById('panelFolder').classList.toggle('active', mode === 'folder');
-    document.getElementById('panelUpload').classList.toggle('active', mode === 'upload');
-    document.getElementById('panelUrl').classList.toggle('active', mode === 'url');
+    const tabFolder = document.getElementById('tabFolderBtn');
+    const tabUpload = document.getElementById('tabUploadBtn');
+    const panelFolder = document.getElementById('panelFolder');
+    const panelUpload = document.getElementById('panelUpload');
+    if (tabFolder) tabFolder.classList.toggle('active', mode === 'folder');
+    if (tabUpload) tabUpload.classList.toggle('active', mode === 'upload');
+    if (panelFolder) panelFolder.classList.toggle('active', mode === 'folder');
+    if (panelUpload) panelUpload.classList.toggle('active', mode === 'upload');
     updateTableAndStats();
 }
 

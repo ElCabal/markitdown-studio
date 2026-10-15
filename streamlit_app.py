@@ -3,7 +3,7 @@ import time
 import zipfile
 from pathlib import Path
 import streamlit as st
-from converter_engine import convert_document, convert_url
+from converter_engine import convert_document
 
 st.set_page_config(
     page_title="MarkItDown Studio",
@@ -21,7 +21,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.markdown('<div class="main-title">⚡ MarkItDown Studio</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-title">Convierte documentos complejos y videos a Markdown optimizado para Claude, ChatGPT y Gemini.</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-title">Convierte documentos complejos (PDF, Word, Excel, PPTX, etc.) a Markdown optimizado para Claude, ChatGPT y Gemini.</div>', unsafe_allow_html=True)
 
 
 def estimate_tokens(text: str) -> int:
@@ -35,82 +35,51 @@ def format_bytes(num_bytes: int) -> str:
     else:
         return f"{num_bytes / (1024 * 1024):.2f} MB"
 
-tab_upload, tab_url = st.tabs(["📁 Subir Archivos (PDF, Word, Excel, ZIP...)", "🔗 Video de YouTube / URL"])
+# --- SUBIR ARCHIVOS ---
+uploaded_files = st.file_uploader(
+    "Arrastra o selecciona tus documentos",
+    type=["pdf", "docx", "pptx", "xlsx", "xls", "csv", "html", "htm", "json", "xml", "txt", "zip"],
+    accept_multiple_files=True
+)
 
-# --- TAB 1: SUBIR ARCHIVOS ---
-with tab_upload:
-    uploaded_files = st.file_uploader(
-        "Arrastra o selecciona tus documentos",
-        type=["pdf", "docx", "pptx", "xlsx", "xls", "csv", "html", "htm", "json", "xml", "txt", "zip"],
-        accept_multiple_files=True
-    )
+if uploaded_files:
+    if st.button("⚡ Convertir Archivos a Markdown", type="primary", use_container_width=True):
+        results = []
+        progress_bar = st.progress(0)
+        total = len(uploaded_files)
 
-    if uploaded_files:
-        if st.button("⚡ Convertir Archivos a Markdown", type="primary", use_container_width=True):
-            results = []
-            progress_bar = st.progress(0)
-            total = len(uploaded_files)
+        for idx, uploaded_file in enumerate(uploaded_files):
+            bytes_data = uploaded_file.read()
+            orig_size = len(bytes_data)
+            ext = Path(uploaded_file.name).suffix.lower()
 
-            for idx, uploaded_file in enumerate(uploaded_files):
-                bytes_data = uploaded_file.read()
-                orig_size = len(bytes_data)
-                ext = Path(uploaded_file.name).suffix.lower()
+            try:
+                content, meta = convert_document(bytes_data, uploaded_file.name, ext=ext)
+                md_bytes = len(content.encode("utf-8"))
+                tokens = estimate_tokens(content)
+                savings = max(0.0, round((1.0 - (md_bytes / orig_size)) * 100, 1)) if orig_size > 0 else 0
 
-                try:
-                    content, meta = convert_document(bytes_data, uploaded_file.name, ext=ext)
-                    md_bytes = len(content.encode("utf-8"))
-                    tokens = estimate_tokens(content)
-                    savings = max(0.0, round((1.0 - (md_bytes / orig_size)) * 100, 1)) if orig_size > 0 else 0
+                results.append({
+                    "name": uploaded_file.name,
+                    "success": True,
+                    "content": content,
+                    "orig_size": orig_size,
+                    "md_size": md_bytes,
+                    "savings": savings,
+                    "tokens": tokens,
+                    "engine": meta.get("engine", "markitdown")
+                })
+            except Exception as e:
+                results.append({
+                    "name": uploaded_file.name,
+                    "success": False,
+                    "error": str(e)
+                })
 
-                    results.append({
-                        "name": uploaded_file.name,
-                        "success": True,
-                        "content": content,
-                        "orig_size": orig_size,
-                        "md_size": md_bytes,
-                        "savings": savings,
-                        "tokens": tokens,
-                        "engine": meta.get("engine", "markitdown")
-                    })
-                except Exception as e:
-                    results.append({
-                        "name": uploaded_file.name,
-                        "success": False,
-                        "error": str(e)
-                    })
+            progress_bar.progress((idx + 1) / total)
 
-                progress_bar.progress((idx + 1) / total)
-
-            st.session_state["results"] = results
-            st.success(f"¡Procesados {len(results)} archivo(s) con éxito!")
-
-# --- TAB 2: YOUTUBE / URL ---
-with tab_url:
-    url_input = st.text_input("Ingresa enlace de YouTube o página web", placeholder="https://www.youtube.com/watch?v=...")
-    if st.button("⚡ Extraer Transcripción a Markdown", type="primary"):
-        if url_input.strip():
-            with st.spinner("Descargando transcripción y convirtiendo..."):
-                try:
-                    content, title, meta = convert_url(url_input.strip())
-                    md_bytes = len(content.encode("utf-8"))
-                    tokens = estimate_tokens(content)
-                    name = f"{title}.md"
-
-                    st.session_state["results"] = [{
-                        "name": name,
-                        "success": True,
-                        "content": content,
-                        "orig_size": md_bytes * 5,
-                        "md_size": md_bytes,
-                        "savings": 90.0,
-                        "tokens": tokens,
-                        "engine": meta.get("engine", "markitdown")
-                    }]
-                    st.success("¡Contenido convertido exitosamente!")
-                except Exception as e:
-                    st.error(f"Error al procesar la URL: {e}")
-        else:
-            st.warning("Por favor ingresa una URL válida.")
+        st.session_state["results"] = results
+        st.success(f"¡Procesados {len(results)} archivo(s) con éxito!")
 
 # --- RESULTADOS Y VISTA PREVIA ---
 if "results" in st.session_state and st.session_state["results"]:
