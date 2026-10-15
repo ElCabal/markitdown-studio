@@ -43,5 +43,6 @@ desktop.ini
 
 # Temporary files & outputs
 *.log
+uv.lock
 conversiones_markdown.zip
 temp_uploads/
